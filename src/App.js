@@ -1,23 +1,15 @@
 import logo from './logo.svg';
 import './App.css';
+import Hero from './Hero';
+import { useState } from 'react';
+import Expense from './Expense';
 
 function App() {
+  const [screen, setScreen] = useState("hero");
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {screen === "hero" ? <Hero onClick={() => setScreen("expense")} /> : <Expense />}
     </div>
   );
 }
