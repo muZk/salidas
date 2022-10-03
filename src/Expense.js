@@ -19,12 +19,12 @@ export default function Expense() {
     ]
   )
 
-  const people = [
+  const [people, setPeople] = useState([
     'Nico',
     'Eli',
     'Gio',
     'Pancho'
-  ]
+  ])
 
   // State:
   // - cada item: name, price, participación de cada persona dentro del item (person => number)
@@ -46,7 +46,32 @@ export default function Expense() {
           <tr>
             <th>Item</th>
             <th>$</th>
-            {people.map(name => <th key={name}>{name}</th>)}
+            {people.map((name, index) => (
+              <th key={index}>
+                <input
+                  type="text"
+                  placeholder="Nombre"
+                  value={name}
+                  onChange={(event) => {
+                    const newPeople = [...people];
+                    newPeople[index] = event.target.value;
+                    setPeople(newPeople);
+                  }}
+                />
+              </th>
+            ))}
+            <th>
+              <button
+                onClick={() => {
+                  setPeople([...people, ''])
+                  setItems(items.map(item => ({
+                    ...item,
+                    distribution: [...item.distribution, 0]
+                  })))
+                }}>
+                Nuevo Integrante
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -97,6 +122,7 @@ export default function Expense() {
                   />
                 </td>
               ))}
+              <td></td>
             </tr>
           ))}
         </tbody>
