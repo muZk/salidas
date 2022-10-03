@@ -1,5 +1,14 @@
 import { useState } from "react"
 
+const CLPFormat = new Intl.NumberFormat("es", {
+  style: "currency",
+  currency: "CLP",
+});
+
+function formatAmount(number) {
+  return  `$${CLPFormat.format(number.toFixed(2)).replace("CLP", "").trim()}`;
+}
+
 export default function Expense() {
   // fila = producto
   // columna = persona
@@ -7,24 +16,14 @@ export default function Expense() {
   const [items, setItems] = useState(
     [
       {
-        name: 'Tricarne',
-        price: 19900,
-        distribution: [
-          1,
-          1,
-          2,
-          1,
-        ]
+        name: null,
+        price: null,
+        distribution: []
       },
     ]
   )
 
-  const [people, setPeople] = useState([
-    'Nico',
-    'Eli',
-    'Gio',
-    'Pancho'
-  ])
+  const [people, setPeople] = useState([])
 
   // State:
   // - cada item: name, price, participación de cada persona dentro del item (person => number)
@@ -35,7 +34,8 @@ export default function Expense() {
   // - Poder agregar un nuevo item
   // - Eliminar un item
 
-  // TODO: revisar si es buena idea ocupar
+  // TODO:
+  // - generar ID cuando agregue un nuevo item o integrante
 
   console.log(items);
 
@@ -126,6 +126,23 @@ export default function Expense() {
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={2}>Total</td>
+            {people.map((_, personIndex) => {
+              let total = 0
+
+              items.forEach((item) => {
+                const totalDistribution = item.distribution.reduce((a, b) => a + b, 0);
+                const cuota = totalDistribution === 0 ? 0 : item.price / totalDistribution;
+                total += cuota * item.distribution[personIndex];
+              })
+
+              return <td>{formatAmount(total)}</td>
+            })}
+            <td></td>
+          </tr>
+        </tfoot>
       </table>
       <div style={{ textAlign: 'left' }}>
         <button
