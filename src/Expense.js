@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { nanoid } from 'nanoid'
 
 const CLPFormat = new Intl.NumberFormat("es", {
   style: "currency",
@@ -16,14 +17,15 @@ export default function Expense() {
   const [items, setItems] = useState(
     [
       {
-        name: null,
-        price: null,
-        distribution: []
+        id: nanoid(),
+        name: '',
+        price: 0,
+        distribution: {}
       },
     ]
   )
 
-  const [people, setPeople] = useState([])
+  const [people, setPeople] = useState([]) // { name: 'Nico', id: '...' }
 
   // State:
   // - cada item: name, price, participación de cada persona dentro del item (person => number)
@@ -36,6 +38,8 @@ export default function Expense() {
 
   // TODO:
   // - generar ID cuando agregue un nuevo item o integrante
+  // - revisar si es más "lindo" usar Immer para actualizar el estado
+  // - agregar prettier (para formatear el código de forma auto)
 
   console.log(items);
 
@@ -46,16 +50,14 @@ export default function Expense() {
           <tr>
             <th>Item</th>
             <th>$</th>
-            {people.map((name, index) => (
-              <th key={index}>
+            {people.map(({ id, name }) => (
+              <th key={id}>
                 <input
                   type="text"
                   placeholder="Nombre"
                   value={name}
                   onChange={(event) => {
-                    const newPeople = [...people];
-                    newPeople[index] = event.target.value;
-                    setPeople(newPeople);
+                    setPeople(people.map(person => person.id === id ? { id, name: event.target.value } : person))
                   }}
                 />
               </th>
@@ -63,11 +65,14 @@ export default function Expense() {
             <th>
               <button
                 onClick={() => {
-                  setPeople([...people, ''])
+                  const newPerson =  { id: nanoid(), name: '' };
+
                   setItems(items.map(item => ({
                     ...item,
-                    distribution: [...item.distribution, 0]
+                    distribution: { ...item.distribution, [newPerson.id]: 0 }
                   })))
+
+                  setPeople([...people, newPerson])
                 }}>
                 Nuevo Integrante
               </button>
@@ -75,20 +80,15 @@ export default function Expense() {
           </tr>
         </thead>
         <tbody>
-          {items.map((item, itemIndex) => (
-            <tr>
+          {items.map(({ id, price, name, distribution }) => (
+            <tr key={id}>
               <td>
                 <input
                   type="text"
                   placeholder="Nombre de item"
-                  value={item.name}
+                  value={name}
                   onChange={(event) => {
-                    const newState = [...items];
-                    newState[itemIndex] = {
-                      ...item,
-                      name: event.target.value,
-                    }
-                    setItems(newState);
+                    setItems(items.map(item => item.id === id ? { ...item, name: event.target.value } : item))
                   }}
                 />
               </td>
@@ -96,28 +96,21 @@ export default function Expense() {
                 <input
                   type="number"
                   placeholder="precio"
-                  value={item.price}
+                  value={price}
                   onChange={(event) => {
-                    const newState = [...items];
-                    newState[itemIndex] = {
-                      ...item,
-                      price: parseInt(event.target.value),
-                    }
-                    setItems(newState);
+                    setItems(items.map(item => item.id === id ? { ...item, price: parseInt(event.target.value) } : item))
                   }}
                 />
               </td>
-              {item.distribution.map((count, distributionIndex) => (
+              {people.map(person => (
                 <td>
                   <input
                     type="number"
-                    value={count}
+                    value={distribution[person.id]}
                     min={0}
                     onChange={(event) => {
                       const newValue = parseInt(event.target.value);
-                      const newState = [...items]; // <--- Revisar esto
-                      newState[itemIndex].distribution[distributionIndex] = newValue;
-                      setItems(newState);
+                      setItems(items.map(item => item.id === id ? { ...item, distribution: { ...distribution, [person.id]: newValue } } : item))
                     }}
                   />
                 </td>
@@ -129,13 +122,13 @@ export default function Expense() {
         <tfoot>
           <tr>
             <td colSpan={2}>Total</td>
-            {people.map((_, personIndex) => {
+            {people.map(person => {
               let total = 0
 
               items.forEach((item) => {
-                const totalDistribution = item.distribution.reduce((a, b) => a + b, 0);
+                const totalDistribution = Object.values(item.distribution).reduce((a, b) => a + b, 0);
                 const cuota = totalDistribution === 0 ? 0 : item.price / totalDistribution;
-                total += cuota * item.distribution[personIndex];
+                total += cuota * item.distribution[person.id];
               })
 
               return <td>{formatAmount(total)}</td>
@@ -150,9 +143,10 @@ export default function Expense() {
             setItems([
               ...items,
               {
-                name: null,
-                price: null,
-                distribution: people.map(() => 0)
+                id: nanoid(),
+                name: '',
+                price: 0,
+                distribution: people.reduce((distribution, { id }) => Object.assign(distribution, { [id]: 0 }), {})
               }
             ])
           }}
