@@ -37,9 +37,9 @@ export default function Expense() {
   // - Eliminar un item
 
   // TODO:
-  // - generar ID cuando agregue un nuevo item o integrante
   // - revisar si es más "lindo" usar Immer para actualizar el estado
   // - agregar prettier (para formatear el código de forma auto)
+  // - cambiar la lógica de "distribution" a true/false
 
   console.log(items);
 
@@ -60,6 +60,21 @@ export default function Expense() {
                     setPeople(people.map(person => person.id === id ? { id, name: event.target.value } : person))
                   }}
                 />
+                <button
+                  onClick={() => {
+                    setPeople(people.filter(item => item.id !== id))
+                    setItems(items.map(item => {
+                      const distribution = { ...item.distribution }
+                      delete distribution[id];
+                      return {
+                        ...item,
+                        distribution,
+                      }
+                    }))
+                  }}
+                >
+                  x
+                </button>
               </th>
             ))}
             <th>
@@ -103,7 +118,7 @@ export default function Expense() {
                 />
               </td>
               {people.map(person => (
-                <td>
+                <td key={person.id}>
                   <input
                     type="number"
                     value={distribution[person.id]}
@@ -115,7 +130,15 @@ export default function Expense() {
                   />
                 </td>
               ))}
-              <td></td>
+              <td>
+                <button
+                  onClick={() => {
+                    setItems(items.filter(item => item.id !== id));
+                  }}
+                >
+                  Borrar
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -126,12 +149,12 @@ export default function Expense() {
               let total = 0
 
               items.forEach((item) => {
-                const totalDistribution = Object.values(item.distribution).reduce((a, b) => a + b, 0);
+                const totalDistribution = Object.values(item.distribution).map(a => a || 0).reduce((a, b) => a + b, 0);
                 const cuota = totalDistribution === 0 ? 0 : item.price / totalDistribution;
-                total += cuota * item.distribution[person.id];
+                total += cuota * (item.distribution[person.id] || 0);
               })
 
-              return <td>{formatAmount(total)}</td>
+              return <td key={person.id}>{formatAmount(total)}</td>
             })}
             <td></td>
           </tr>
