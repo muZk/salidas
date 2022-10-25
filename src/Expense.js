@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import { nanoid } from "nanoid";
 
 const CLPFormat = new Intl.NumberFormat("es", {
@@ -10,36 +10,134 @@ function formatAmount(number) {
   return `$${CLPFormat.format(number.toFixed(2)).replace("CLP", "").trim()}`;
 }
 
+function newItem() {
+  return {
+    id: nanoid(),
+    name: "",
+    amount: 0,
+  };
+}
+
+function newFriend() {
+  return {
+    id: nanoid(),
+    name: "",
+  };
+}
+
+function reducer(state, action) {
+  switch (action.type) {
+    case "ADD_ITEM":
+      return {
+        ...state,
+        splits: state.splits.concat(
+          state.friends.map((friend) => ({
+            friendId: friend.id,
+            itemId: action.payload.id,
+            amount: 0,
+          }))
+        ),
+        items: [...state.items, action.payload],
+      };
+    case "ADD_FRIEND":
+      return {
+        ...state,
+        splits: state.splits.concat(
+          state.items.map((item) => ({
+            friendId: action.payload.id,
+            itemId: item.id,
+            amount: 0,
+          }))
+        ),
+        friends: [...state.friends, action.payload],
+      };
+    case "UPDATE_ITEM":
+      return {
+        ...state,
+        items: state.items.map((item) => {
+          if (item.id === action.payload.id) {
+            return { ...item, ...action.payload };
+          }
+          return item;
+        }),
+      };
+    case "UPDATE_FRIEND":
+      return {
+        ...state,
+        friends: state.friends.map((friend) => {
+          if (friend.id === action.payload.id) {
+            return { ...friend, ...action.payload };
+          }
+          return friend;
+        }),
+      };
+    case "UPDATE_SPLIT":
+      return {
+        ...state,
+        splits: state.splits.map((split) => {
+          if (
+            split.itemId === action.payload.itemId &&
+            split.friendId === action.payload.friendId
+          ) {
+            return { ...split, ...action.payload };
+          }
+          return split;
+        }),
+      };
+    case "DELETE_ITEM":
+      return {
+        ...state,
+        items: state.items.filter((item) => item.id !== action.payload.id),
+        splits: state.splits.filter(
+          (split) => split.itemId !== action.payload.id
+        ),
+      };
+    case "DELETE_FRIEND":
+      return {
+        ...state,
+        friends: state.friends.filter(
+          (friend) => friend.id !== action.payload.id
+        ),
+        splits: state.splits.filter(
+          (split) => split.friendId !== action.payload.id
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
 export default function Expense() {
-  // fila = producto
-  // columna = persona
+  const [state, dispatch] = useReducer(reducer, {
+    items: [newItem()],
+    friends: [],
+    splits: [],
+  });
 
-  const [items, setItems] = useState([
-    {
-      id: nanoid(),
-      name: "",
-      price: 0,
-      distribution: {},
-    },
-  ]);
+  const { items, friends, splits } = state;
 
-  const [people, setPeople] = useState([]); // { name: 'Nico', id: '...' }
+  const getContribution = (itemId, friendId) => {
+    return (
+      splits.find(
+        (split) => split.itemId === itemId && split.friendId === friendId
+      )?.amount || 0
+    );
+  };
 
-  // State:
-  // - cada item: name, price, participación de cada persona dentro del item (person => number)
-  // - listado de personas
+  const getFriendTotal = (friendId) => {
+    let total = 0;
 
-  // funcionalidades:
-  // - Poder modificar el nombre / precio (item)
-  // - Poder agregar un nuevo item
-  // - Eliminar un item
+    items.forEach((item) => {
+      const totalDistribution = splits
+        .filter((split) => split.itemId === item.id)
+        .reduce((total, { amount }) => total + amount, 0);
+      const cuota =
+        totalDistribution === 0 ? 0 : item.price / totalDistribution;
+      total += cuota * getContribution(item.id, friendId);
+    });
 
-  // TODO:
-  // - revisar si es más "lindo" usar Immer para actualizar el estado
-  // - agregar prettier (para formatear el código de forma auto)
-  // - cambiar la lógica de "distribution" a true/false
-
-  console.log(items);
+    return total;
+  };
 
   return (
     <>
@@ -48,35 +146,22 @@ export default function Expense() {
           <tr>
             <th>Item</th>
             <th>$</th>
-            {people.map(({ id, name }) => (
+            {friends.map(({ id, name }) => (
               <th key={id}>
                 <input
                   type="text"
                   placeholder="Nombre"
                   value={name}
                   onChange={(event) => {
-                    setPeople(
-                      people.map((person) =>
-                        person.id === id
-                          ? { id, name: event.target.value }
-                          : person
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_FRIEND",
+                      payload: { id, name: event.target.value },
+                    });
                   }}
                 />
                 <button
                   onClick={() => {
-                    setPeople(people.filter((item) => item.id !== id));
-                    setItems(
-                      items.map((item) => {
-                        const distribution = { ...item.distribution };
-                        delete distribution[id];
-                        return {
-                          ...item,
-                          distribution,
-                        };
-                      })
-                    );
+                    dispatch({ type: "DELETE_FRIEND", payload: { id } });
                   }}
                 >
                   x
@@ -85,18 +170,9 @@ export default function Expense() {
             ))}
             <th>
               <button
-                onClick={() => {
-                  const newPerson = { id: nanoid(), name: "" };
-
-                  setItems(
-                    items.map((item) => ({
-                      ...item,
-                      distribution: { ...item.distribution, [newPerson.id]: 0 },
-                    }))
-                  );
-
-                  setPeople([...people, newPerson]);
-                }}
+                onClick={() =>
+                  dispatch({ type: "ADD_FRIEND", payload: newFriend() })
+                }
               >
                 Nuevo Integrante
               </button>
@@ -104,7 +180,7 @@ export default function Expense() {
           </tr>
         </thead>
         <tbody>
-          {items.map(({ id, price, name, distribution }) => (
+          {items.map(({ id, price, name }) => (
             <tr key={id}>
               <td>
                 <input
@@ -112,13 +188,10 @@ export default function Expense() {
                   placeholder="Nombre de item"
                   value={name}
                   onChange={(event) => {
-                    setItems(
-                      items.map((item) =>
-                        item.id === id
-                          ? { ...item, name: event.target.value }
-                          : item
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_ITEM",
+                      payload: { id, name: event.target.value },
+                    });
                   }}
                 />
               </td>
@@ -128,37 +201,32 @@ export default function Expense() {
                   placeholder="precio"
                   value={price}
                   onChange={(event) => {
-                    setItems(
-                      items.map((item) =>
-                        item.id === id
-                          ? { ...item, price: parseInt(event.target.value) }
-                          : item
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_ITEM",
+                      payload: {
+                        id,
+                        name,
+                        price: parseInt(event.target.value),
+                      },
+                    });
                   }}
                 />
               </td>
-              {people.map((person) => (
-                <td key={person.id}>
+              {friends.map((friend) => (
+                <td key={friend.id}>
                   <input
                     type="number"
-                    value={distribution[person.id]}
+                    value={getContribution(id, friend.id)}
                     min={0}
                     onChange={(event) => {
-                      const newValue = parseInt(event.target.value);
-                      setItems(
-                        items.map((item) =>
-                          item.id === id
-                            ? {
-                                ...item,
-                                distribution: {
-                                  ...distribution,
-                                  [person.id]: newValue,
-                                },
-                              }
-                            : item
-                        )
-                      );
+                      dispatch({
+                        type: "UPDATE_SPLIT",
+                        payload: {
+                          itemId: id,
+                          friendId: friend.id,
+                          amount: parseInt(event.target.value),
+                        },
+                      });
                     }}
                   />
                 </td>
@@ -166,7 +234,7 @@ export default function Expense() {
               <td>
                 <button
                   onClick={() => {
-                    setItems(items.filter((item) => item.id !== id));
+                    dispatch({ type: "DELETE_ITEM", payload: { id } });
                   }}
                 >
                   Borrar
@@ -178,41 +246,16 @@ export default function Expense() {
         <tfoot>
           <tr>
             <td colSpan={2}>Total</td>
-            {people.map((person) => {
-              let total = 0;
-
-              items.forEach((item) => {
-                const totalDistribution = Object.values(item.distribution)
-                  .map((a) => a || 0)
-                  .reduce((a, b) => a + b, 0);
-                const cuota =
-                  totalDistribution === 0 ? 0 : item.price / totalDistribution;
-                total += cuota * (item.distribution[person.id] || 0);
-              });
-
-              return <td key={person.id}>{formatAmount(total)}</td>;
-            })}
+            {friends.map((friend) => (
+              <td key={friend.id}>{formatAmount(getFriendTotal(friend.id))}</td>
+            ))}
             <td></td>
           </tr>
         </tfoot>
       </table>
       <div style={{ textAlign: "left" }}>
         <button
-          onClick={() => {
-            setItems([
-              ...items,
-              {
-                id: nanoid(),
-                name: "",
-                price: 0,
-                distribution: people.reduce(
-                  (distribution, { id }) =>
-                    Object.assign(distribution, { [id]: 0 }),
-                  {}
-                ),
-              },
-            ]);
-          }}
+          onClick={() => dispatch({ type: "ADD_ITEM", payload: newItem() })}
         >
           Agregar item
         </button>
