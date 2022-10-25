@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import { nanoid } from "nanoid";
 
 const CLPFormat = new Intl.NumberFormat("es", {
@@ -25,10 +25,96 @@ function newFriend() {
   };
 }
 
+function reducer(state, action) {
+  switch (action.type) {
+    case "ADD_ITEM":
+      return {
+        ...state,
+        splits: state.splits.concat(
+          state.friends.map((friend) => ({
+            friendId: friend.id,
+            itemId: action.payload.id,
+            amount: 0,
+          }))
+        ),
+        items: [...state.items, action.payload],
+      };
+    case "ADD_FRIEND":
+      return {
+        ...state,
+        splits: state.splits.concat(
+          state.items.map((item) => ({
+            friendId: action.payload.id,
+            itemId: item.id,
+            amount: 0,
+          }))
+        ),
+        friends: [...state.friends, action.payload],
+      };
+    case "UPDATE_ITEM":
+      return {
+        ...state,
+        items: state.items.map((item) => {
+          if (item.id === action.payload.id) {
+            return { ...item, ...action.payload };
+          }
+          return item;
+        }),
+      };
+    case "UPDATE_FRIEND":
+      return {
+        ...state,
+        friends: state.friends.map((friend) => {
+          if (friend.id === action.payload.id) {
+            return { ...friend, ...action.payload };
+          }
+          return friend;
+        }),
+      };
+    case "UPDATE_SPLIT":
+      return {
+        ...state,
+        splits: state.splits.map((split) => {
+          if (
+            split.itemId === action.payload.itemId &&
+            split.friendId === action.payload.friendId
+          ) {
+            return { ...split, ...action.payload };
+          }
+          return split;
+        }),
+      };
+    case "DELETE_ITEM":
+      return {
+        ...state,
+        items: state.items.filter((item) => item.id !== action.payload.id),
+        splits: state.splits.filter(
+          (split) => split.itemId !== action.payload.id
+        ),
+      };
+    case "DELETE_FRIEND":
+      return {
+        ...state,
+        friends: state.friends.filter(
+          (friend) => friend.id !== action.payload.id
+        ),
+        splits: state.splits.filter(
+          (split) => split.friendId !== action.payload.id
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
 export default function Expense() {
-  const [items, setItems] = useState(() => [newItem()]);
-  const [friends, setFriends] = useState([]);
-  const [splits, setSplits] = useState([]);
+  const [state, dispatch] = useReducer(reducer, {
+    items: [newItem()],
+    friends: [],
+    splits: [],
+  });
+
+  const { items, friends, splits } = state;
 
   const getContribution = (itemId, friendId) => {
     return (
@@ -67,19 +153,15 @@ export default function Expense() {
                   placeholder="Nombre"
                   value={name}
                   onChange={(event) => {
-                    setFriends(
-                      friends.map((friend) =>
-                        friend.id === id
-                          ? { id, name: event.target.value }
-                          : friend
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_FRIEND",
+                      payload: { id, name: event.target.value },
+                    });
                   }}
                 />
                 <button
                   onClick={() => {
-                    setFriends(friends.filter((friend) => friend.id !== id));
-                    setSplits(splits.filter((split) => split.friendId !== id));
+                    dispatch({ type: "DELETE_FRIEND", payload: { id } });
                   }}
                 >
                   x
@@ -87,7 +169,11 @@ export default function Expense() {
               </th>
             ))}
             <th>
-              <button onClick={() => setFriends(friends.concat(newFriend()))}>
+              <button
+                onClick={() =>
+                  dispatch({ type: "ADD_FRIEND", payload: newFriend() })
+                }
+              >
                 Nuevo Integrante
               </button>
             </th>
@@ -102,13 +188,10 @@ export default function Expense() {
                   placeholder="Nombre de item"
                   value={name}
                   onChange={(event) => {
-                    setItems(
-                      items.map((item) =>
-                        item.id === id
-                          ? { ...item, name: event.target.value }
-                          : item
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_ITEM",
+                      payload: { id, name: event.target.value },
+                    });
                   }}
                 />
               </td>
@@ -118,13 +201,14 @@ export default function Expense() {
                   placeholder="precio"
                   value={price}
                   onChange={(event) => {
-                    setItems(
-                      items.map((item) =>
-                        item.id === id
-                          ? { ...item, price: parseInt(event.target.value) }
-                          : item
-                      )
-                    );
+                    dispatch({
+                      type: "UPDATE_ITEM",
+                      payload: {
+                        id,
+                        name,
+                        price: parseInt(event.target.value),
+                      },
+                    });
                   }}
                 />
               </td>
@@ -135,29 +219,14 @@ export default function Expense() {
                     value={getContribution(id, friend.id)}
                     min={0}
                     onChange={(event) => {
-                      const newAmount = parseInt(event.target.value);
-                      const existingSplit = splits.find(
-                        ({ itemId, friendId }) =>
-                          itemId === id && friendId === friend.id
-                      );
-
-                      if (existingSplit) {
-                        setSplits(
-                          splits.map((split) =>
-                            split === existingSplit
-                              ? { ...split, amount: newAmount }
-                              : split
-                          )
-                        );
-                      } else {
-                        setSplits(
-                          splits.concat({
-                            itemId: id,
-                            friendId: friend.id,
-                            amount: newAmount,
-                          })
-                        );
-                      }
+                      dispatch({
+                        type: "UPDATE_SPLIT",
+                        payload: {
+                          itemId: id,
+                          friendId: friend.id,
+                          amount: parseInt(event.target.value),
+                        },
+                      });
                     }}
                   />
                 </td>
@@ -165,8 +234,7 @@ export default function Expense() {
               <td>
                 <button
                   onClick={() => {
-                    setItems(items.filter((item) => item.id !== id));
-                    setSplits(splits.filter((split) => split.itemId !== id));
+                    dispatch({ type: "DELETE_ITEM", payload: { id } });
                   }}
                 >
                   Borrar
@@ -186,7 +254,9 @@ export default function Expense() {
         </tfoot>
       </table>
       <div style={{ textAlign: "left" }}>
-        <button onClick={() => setItems(items.concat(newItem()))}>
+        <button
+          onClick={() => dispatch({ type: "ADD_ITEM", payload: newItem() })}
+        >
           Agregar item
         </button>
       </div>
