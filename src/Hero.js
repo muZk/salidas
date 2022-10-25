@@ -6,5 +6,5 @@ export default function Hero({ onClick }) {
       <p>No te preocupes. Divide la cuenta de manera fácil.</p>
       <button onClick={onClick}>Nuevo gasto</button>
     </div>
-  )
+  );
 }

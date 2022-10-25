@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { nanoid } from 'nanoid'
+import { useState } from "react";
+import { nanoid } from "nanoid";
 
 const CLPFormat = new Intl.NumberFormat("es", {
   style: "currency",
@@ -7,25 +7,23 @@ const CLPFormat = new Intl.NumberFormat("es", {
 });
 
 function formatAmount(number) {
-  return  `$${CLPFormat.format(number.toFixed(2)).replace("CLP", "").trim()}`;
+  return `$${CLPFormat.format(number.toFixed(2)).replace("CLP", "").trim()}`;
 }
 
 export default function Expense() {
   // fila = producto
   // columna = persona
 
-  const [items, setItems] = useState(
-    [
-      {
-        id: nanoid(),
-        name: '',
-        price: 0,
-        distribution: {}
-      },
-    ]
-  )
+  const [items, setItems] = useState([
+    {
+      id: nanoid(),
+      name: "",
+      price: 0,
+      distribution: {},
+    },
+  ]);
 
-  const [people, setPeople] = useState([]) // { name: 'Nico', id: '...' }
+  const [people, setPeople] = useState([]); // { name: 'Nico', id: '...' }
 
   // State:
   // - cada item: name, price, participación de cada persona dentro del item (person => number)
@@ -57,20 +55,28 @@ export default function Expense() {
                   placeholder="Nombre"
                   value={name}
                   onChange={(event) => {
-                    setPeople(people.map(person => person.id === id ? { id, name: event.target.value } : person))
+                    setPeople(
+                      people.map((person) =>
+                        person.id === id
+                          ? { id, name: event.target.value }
+                          : person
+                      )
+                    );
                   }}
                 />
                 <button
                   onClick={() => {
-                    setPeople(people.filter(item => item.id !== id))
-                    setItems(items.map(item => {
-                      const distribution = { ...item.distribution }
-                      delete distribution[id];
-                      return {
-                        ...item,
-                        distribution,
-                      }
-                    }))
+                    setPeople(people.filter((item) => item.id !== id));
+                    setItems(
+                      items.map((item) => {
+                        const distribution = { ...item.distribution };
+                        delete distribution[id];
+                        return {
+                          ...item,
+                          distribution,
+                        };
+                      })
+                    );
                   }}
                 >
                   x
@@ -80,15 +86,18 @@ export default function Expense() {
             <th>
               <button
                 onClick={() => {
-                  const newPerson =  { id: nanoid(), name: '' };
+                  const newPerson = { id: nanoid(), name: "" };
 
-                  setItems(items.map(item => ({
-                    ...item,
-                    distribution: { ...item.distribution, [newPerson.id]: 0 }
-                  })))
+                  setItems(
+                    items.map((item) => ({
+                      ...item,
+                      distribution: { ...item.distribution, [newPerson.id]: 0 },
+                    }))
+                  );
 
-                  setPeople([...people, newPerson])
-                }}>
+                  setPeople([...people, newPerson]);
+                }}
+              >
                 Nuevo Integrante
               </button>
             </th>
@@ -103,7 +112,13 @@ export default function Expense() {
                   placeholder="Nombre de item"
                   value={name}
                   onChange={(event) => {
-                    setItems(items.map(item => item.id === id ? { ...item, name: event.target.value } : item))
+                    setItems(
+                      items.map((item) =>
+                        item.id === id
+                          ? { ...item, name: event.target.value }
+                          : item
+                      )
+                    );
                   }}
                 />
               </td>
@@ -113,11 +128,17 @@ export default function Expense() {
                   placeholder="precio"
                   value={price}
                   onChange={(event) => {
-                    setItems(items.map(item => item.id === id ? { ...item, price: parseInt(event.target.value) } : item))
+                    setItems(
+                      items.map((item) =>
+                        item.id === id
+                          ? { ...item, price: parseInt(event.target.value) }
+                          : item
+                      )
+                    );
                   }}
                 />
               </td>
-              {people.map(person => (
+              {people.map((person) => (
                 <td key={person.id}>
                   <input
                     type="number"
@@ -125,7 +146,19 @@ export default function Expense() {
                     min={0}
                     onChange={(event) => {
                       const newValue = parseInt(event.target.value);
-                      setItems(items.map(item => item.id === id ? { ...item, distribution: { ...distribution, [person.id]: newValue } } : item))
+                      setItems(
+                        items.map((item) =>
+                          item.id === id
+                            ? {
+                                ...item,
+                                distribution: {
+                                  ...distribution,
+                                  [person.id]: newValue,
+                                },
+                              }
+                            : item
+                        )
+                      );
                     }}
                   />
                 </td>
@@ -133,7 +166,7 @@ export default function Expense() {
               <td>
                 <button
                   onClick={() => {
-                    setItems(items.filter(item => item.id !== id));
+                    setItems(items.filter((item) => item.id !== id));
                   }}
                 >
                   Borrar
@@ -145,38 +178,45 @@ export default function Expense() {
         <tfoot>
           <tr>
             <td colSpan={2}>Total</td>
-            {people.map(person => {
-              let total = 0
+            {people.map((person) => {
+              let total = 0;
 
               items.forEach((item) => {
-                const totalDistribution = Object.values(item.distribution).map(a => a || 0).reduce((a, b) => a + b, 0);
-                const cuota = totalDistribution === 0 ? 0 : item.price / totalDistribution;
+                const totalDistribution = Object.values(item.distribution)
+                  .map((a) => a || 0)
+                  .reduce((a, b) => a + b, 0);
+                const cuota =
+                  totalDistribution === 0 ? 0 : item.price / totalDistribution;
                 total += cuota * (item.distribution[person.id] || 0);
-              })
+              });
 
-              return <td key={person.id}>{formatAmount(total)}</td>
+              return <td key={person.id}>{formatAmount(total)}</td>;
             })}
             <td></td>
           </tr>
         </tfoot>
       </table>
-      <div style={{ textAlign: 'left' }}>
+      <div style={{ textAlign: "left" }}>
         <button
           onClick={() => {
             setItems([
               ...items,
               {
                 id: nanoid(),
-                name: '',
+                name: "",
                 price: 0,
-                distribution: people.reduce((distribution, { id }) => Object.assign(distribution, { [id]: 0 }), {})
-              }
-            ])
+                distribution: people.reduce(
+                  (distribution, { id }) =>
+                    Object.assign(distribution, { [id]: 0 }),
+                  {}
+                ),
+              },
+            ]);
           }}
         >
           Agregar item
         </button>
       </div>
     </>
-  )
+  );
 }
