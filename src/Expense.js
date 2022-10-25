@@ -33,8 +33,7 @@ export default function Expense() {
   const getContribution = (itemId, friendId) => {
     return (
       splits.find(
-        (friendSplit) =>
-          friendSplit.itemId === itemId && friendSplit.friendId === friendId
+        (split) => split.itemId === itemId && split.friendId === friendId
       )?.amount || 0
     );
   };
