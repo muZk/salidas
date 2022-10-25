@@ -23,7 +23,7 @@ export default function Expense() {
     },
   ]);
 
-  const [people, setPeople] = useState([]); // { name: 'Nico', id: '...' }
+  const [friends, setFriends] = useState([]); // { name: 'Nico', id: '...' }
 
   // State:
   // - cada item: name, price, participación de cada persona dentro del item (person => number)
@@ -48,25 +48,25 @@ export default function Expense() {
           <tr>
             <th>Item</th>
             <th>$</th>
-            {people.map(({ id, name }) => (
+            {friends.map(({ id, name }) => (
               <th key={id}>
                 <input
                   type="text"
                   placeholder="Nombre"
                   value={name}
                   onChange={(event) => {
-                    setPeople(
-                      people.map((person) =>
-                        person.id === id
+                    setFriends(
+                      friends.map((friend) =>
+                        friend.id === id
                           ? { id, name: event.target.value }
-                          : person
+                          : friend
                       )
                     );
                   }}
                 />
                 <button
                   onClick={() => {
-                    setPeople(people.filter((item) => item.id !== id));
+                    setFriends(friends.filter((item) => item.id !== id));
                     setItems(
                       items.map((item) => {
                         const distribution = { ...item.distribution };
@@ -86,16 +86,16 @@ export default function Expense() {
             <th>
               <button
                 onClick={() => {
-                  const newPerson = { id: nanoid(), name: "" };
+                  const newFriend = { id: nanoid(), name: "" };
 
                   setItems(
                     items.map((item) => ({
                       ...item,
-                      distribution: { ...item.distribution, [newPerson.id]: 0 },
+                      distribution: { ...item.distribution, [newFriend.id]: 0 },
                     }))
                   );
 
-                  setPeople([...people, newPerson]);
+                  setFriends([...friends, newFriend]);
                 }}
               >
                 Nuevo Integrante
@@ -138,11 +138,11 @@ export default function Expense() {
                   }}
                 />
               </td>
-              {people.map((person) => (
-                <td key={person.id}>
+              {friends.map((friend) => (
+                <td key={friend.id}>
                   <input
                     type="number"
-                    value={distribution[person.id]}
+                    value={distribution[friend.id]}
                     min={0}
                     onChange={(event) => {
                       const newValue = parseInt(event.target.value);
@@ -153,7 +153,7 @@ export default function Expense() {
                                 ...item,
                                 distribution: {
                                   ...distribution,
-                                  [person.id]: newValue,
+                                  [friend.id]: newValue,
                                 },
                               }
                             : item
@@ -178,7 +178,7 @@ export default function Expense() {
         <tfoot>
           <tr>
             <td colSpan={2}>Total</td>
-            {people.map((person) => {
+            {friends.map((friend) => {
               let total = 0;
 
               items.forEach((item) => {
@@ -187,10 +187,10 @@ export default function Expense() {
                   .reduce((a, b) => a + b, 0);
                 const cuota =
                   totalDistribution === 0 ? 0 : item.price / totalDistribution;
-                total += cuota * (item.distribution[person.id] || 0);
+                total += cuota * (item.distribution[friend.id] || 0);
               });
 
-              return <td key={person.id}>{formatAmount(total)}</td>;
+              return <td key={friend.id}>{formatAmount(total)}</td>;
             })}
             <td></td>
           </tr>
@@ -205,7 +205,7 @@ export default function Expense() {
                 id: nanoid(),
                 name: "",
                 price: 0,
-                distribution: people.reduce(
+                distribution: friends.reduce(
                   (distribution, { id }) =>
                     Object.assign(distribution, { [id]: 0 }),
                   {}
