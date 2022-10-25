@@ -1,14 +1,18 @@
-import './App.css';
-import Hero from './Hero';
-import { useState } from 'react';
-import Expense from './Expense';
+import "./App.css";
+import Hero from "./Hero";
+import { useState } from "react";
+import Expense from "./Expense";
 
 function App() {
   const [screen, setScreen] = useState("hero");
 
   return (
     <div className="App">
-      {screen === "hero" ? <Hero onClick={() => setScreen("expense")} /> : <Expense />}
+      {screen === "hero" ? (
+        <Hero onClick={() => setScreen("expense")} />
+      ) : (
+        <Expense />
+      )}
     </div>
   );
 }
