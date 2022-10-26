@@ -14,7 +14,7 @@ function newItem() {
   return {
     id: nanoid(),
     name: "",
-    amount: 0,
+    price: 0,
   };
 }
 
@@ -139,6 +139,19 @@ export default function Expense() {
     return total;
   };
 
+  const getTotalConsumption = () => {
+    let totalConsumption = 0
+    items.forEach((item) => {
+      totalConsumption += item.price;
+    })
+    return totalConsumption;
+  }
+
+  const getTip = (mount) => {
+    const tipValue = 0.1;
+    return mount * tipValue;
+  }
+
   return (
     <>
       <table>
@@ -245,9 +258,28 @@ export default function Expense() {
         </tbody>
         <tfoot>
           <tr>
-            <td colSpan={2}>Total</td>
+            <td>Total Consumo</td>
+            <td>{formatAmount(getTotalConsumption())}</td>
             {friends.map((friend) => (
               <td key={friend.id}>{formatAmount(getFriendTotal(friend.id))}</td>
+            ))}
+            <td></td>
+          </tr>
+          <tr>
+            <td>Propina (10%)</td>
+            <td>{formatAmount(getTip(getTotalConsumption()))}</td>
+            {friends.map((friend) => (
+              <td key={friend.id}>{formatAmount(getTip(getFriendTotal(friend.id)))}</td>
+            ))}
+            <td></td>
+          </tr>
+          <tr>
+            <td>Total a pagar</td>
+            <td>{formatAmount(getTotalConsumption() + getTip(getTotalConsumption()))}</td>
+            {friends.map((friend) => (
+              <td key={friend.id}>
+                {formatAmount(getFriendTotal(friend.id) + getTip(getFriendTotal(friend.id)))}
+              </td>
             ))}
             <td></td>
           </tr>
