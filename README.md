@@ -6,7 +6,7 @@ Saliste y pagaste la cuenta. Esta herramienta te ayuda a saber cuánto te debe c
 
 Se aceptan PR's :smile: (aprovecha el [Hacktoberfest](https://hacktoberfest.com/)!)
 
-- [ ] Cuando se borra el número en la celda de item/amigo, aparece un "NaN" en el total. Cuando pase, que cuente como 0 y así evitar el NaN.
+- [x] Cuando se borra el número en la celda de item/amigo, aparece un "NaN" en el total. Cuando pase, que cuente como 0 y así evitar el NaN.
 - [ ] Al agregar una salida, poder agregarle un nombre.
 - [ ] Poder tener un listado con varias salidas.
 - [ ] Persistir información en localStorage, para no perder tu información cuando recargues la página.
