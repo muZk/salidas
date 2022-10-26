@@ -120,7 +120,7 @@ export default function Expense() {
     return (
       splits.find(
         (split) => split.itemId === itemId && split.friendId === friendId
-      )?.amount || 0
+      )?.amount || ''
     );
   };
 
@@ -199,14 +199,14 @@ export default function Expense() {
                 <input
                   type="number"
                   placeholder="precio"
-                  value={price}
+                  value={price ? price : ''}
                   onChange={(event) => {
                     dispatch({
                       type: "UPDATE_ITEM",
                       payload: {
                         id,
                         name,
-                        price: parseInt(event.target.value),
+                        price: parseInt(event.target.value ? event.target.value : 0),
                       },
                     });
                   }}
@@ -216,6 +216,7 @@ export default function Expense() {
                 <td key={friend.id}>
                   <input
                     type="number"
+                    placeholder="Items consumidos"
                     value={getContribution(id, friend.id)}
                     min={0}
                     onChange={(event) => {
@@ -224,7 +225,7 @@ export default function Expense() {
                         payload: {
                           itemId: id,
                           friendId: friend.id,
-                          amount: parseInt(event.target.value),
+                          amount: parseInt(event.target.value ? event.target.value : 0),
                         },
                       });
                     }}
