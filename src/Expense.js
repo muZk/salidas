@@ -1,5 +1,6 @@
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { nanoid } from "nanoid";
+import { get, set } from "./storage";
 
 const CLPFormat = new Intl.NumberFormat("es", {
   style: "currency",
@@ -107,12 +108,26 @@ function reducer(state, action) {
   }
 }
 
-export default function Expense() {
-  const [state, dispatch] = useReducer(reducer, {
+function getInitialState() {
+  const expense = get();
+
+  if (expense) {
+    return expense;
+  }
+
+  return {
     items: [newItem()],
     friends: [],
     splits: [],
-  });
+  };
+}
+
+export default function Expense() {
+  const [state, dispatch] = useReducer(reducer, null, getInitialState);
+
+  useEffect(() => {
+    set(state);
+  }, [state]);
 
   const { items, friends, splits } = state;
 
@@ -120,7 +135,7 @@ export default function Expense() {
     return (
       splits.find(
         (split) => split.itemId === itemId && split.friendId === friendId
-      )?.amount || ''
+      )?.amount || ""
     );
   };
 
@@ -140,17 +155,17 @@ export default function Expense() {
   };
 
   const getTotalConsumption = () => {
-    let totalConsumption = 0
+    let totalConsumption = 0;
     items.forEach((item) => {
       totalConsumption += item.price;
-    })
+    });
     return totalConsumption;
-  }
+  };
 
   const getTip = (mount) => {
     const tipValue = 0.1;
     return mount * tipValue;
-  }
+  };
 
   return (
     <>
@@ -212,14 +227,16 @@ export default function Expense() {
                 <input
                   type="number"
                   placeholder="precio"
-                  value={price ? price : ''}
+                  value={price ? price : ""}
                   onChange={(event) => {
                     dispatch({
                       type: "UPDATE_ITEM",
                       payload: {
                         id,
                         name,
-                        price: parseInt(event.target.value ? event.target.value : 0),
+                        price: parseInt(
+                          event.target.value ? event.target.value : 0
+                        ),
                       },
                     });
                   }}
@@ -238,7 +255,9 @@ export default function Expense() {
                         payload: {
                           itemId: id,
                           friendId: friend.id,
-                          amount: parseInt(event.target.value ? event.target.value : 0),
+                          amount: parseInt(
+                            event.target.value ? event.target.value : 0
+                          ),
                         },
                       });
                     }}
@@ -270,16 +289,24 @@ export default function Expense() {
             <td>Propina (10%)</td>
             <td>{formatAmount(getTip(getTotalConsumption()))}</td>
             {friends.map((friend) => (
-              <td key={friend.id}>{formatAmount(getTip(getFriendTotal(friend.id)))}</td>
+              <td key={friend.id}>
+                {formatAmount(getTip(getFriendTotal(friend.id)))}
+              </td>
             ))}
             <td></td>
           </tr>
           <tr>
             <td>Total a pagar</td>
-            <td>{formatAmount(getTotalConsumption() + getTip(getTotalConsumption()))}</td>
+            <td>
+              {formatAmount(
+                getTotalConsumption() + getTip(getTotalConsumption())
+              )}
+            </td>
             {friends.map((friend) => (
               <td key={friend.id}>
-                {formatAmount(getFriendTotal(friend.id) + getTip(getFriendTotal(friend.id)))}
+                {formatAmount(
+                  getFriendTotal(friend.id) + getTip(getFriendTotal(friend.id))
+                )}
               </td>
             ))}
             <td></td>
